@@ -1,0 +1,62 @@
+name: E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install test dependencies
+        run: npm install
+
+      - name: Start services
+        run: docker compose up -d --build
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services to be ready..."
+          for port in 3001 3000 3002; do
+            echo "Waiting for service on port $port..."
+            for i in $(seq 1 60); do
+              if curl -sf http://localhost:$port/health > /dev/null 2>&1; then
+                echo "Service on port $port is ready!"
+                break
+              fi
+              if [ $i -eq 60 ]; then
+                echo "Timeout waiting for service on port $port"
+                docker compose logs
+                exit 1
+              fi
+              sleep 1
+            done
+          done
+          echo "All services are ready!"
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+
+      - name: Upload HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Tear down services
+        if: always()
+        run: docker compose down -v
+

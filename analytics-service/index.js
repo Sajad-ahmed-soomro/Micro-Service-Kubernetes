@@ -1,10 +1,10 @@
-// analytics-service/index.js
 const express = require('express');
 const mongoose = require('mongoose');
 const app = express();
 app.use(express.json());
 
-mongoose.connect('mongodb://localhost:27017/analytics', { useNewUrlParser: true, useUnifiedTopology: true });
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://mongo:27017/analytics';
+mongoose.connect(MONGO_URI);
 
 const logSchema = new mongoose.Schema({
   log: Object,
@@ -12,16 +12,28 @@ const logSchema = new mongoose.Schema({
 });
 const Log = mongoose.model('Log', logSchema);
 
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.post('/log', async (req, res) => {
-  const log = new Log({ log: req.body, timestamp: new Date() });
-  await log.save();
-  res.status(201).json({ message: 'Log stored' });
+  try {
+    const log = new Log({ log: req.body, timestamp: new Date() });
+    await log.save();
+    res.status(201).json({ message: 'Log stored' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/logs', async (req, res) => {
-  const logs = await Log.find();
-  res.json(logs);
+  try {
+    const logs = await Log.find();
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-const PORT = 3002;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => console.log(`Analytics service running on port ${PORT}`));

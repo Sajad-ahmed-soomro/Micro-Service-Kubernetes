@@ -120,6 +120,49 @@ Workflows are triggered on `push` and `pull_request`.
 
 ---
 
+## 🧪 End-to-End API Tests
+
+This project includes a **Playwright (TypeScript)** API test suite that validates all three microservices end-to-end.
+
+### What's Tested
+
+| Service | Tests |
+|---------|-------|
+| **Auth** | Register, login, duplicate email (409), wrong password (401), tampered JWT |
+| **Blog** | Full CRUD with JWT auth, 400 on bad input, 401 without token, 403 on another user's post |
+| **Analytics** | View event logging after reading a post, log retrieval |
+| **Health** | All service health endpoints |
+
+### Prerequisites
+
+- Docker & Docker Compose
+- Node.js 18+
+
+### Running Locally
+
+```bash
+# 1. Start all services
+docker compose up -d --build
+
+# 2. Install test dependencies
+npm install
+
+# 3. Wait for services to be healthy, then run tests
+npm run test:e2e
+
+# 4. View the HTML report
+npm run test:e2e:report
+
+# 5. Tear down
+docker compose down -v
+```
+
+### CI/CD
+
+Tests run automatically on push to `main` and on pull requests via GitHub Actions. The HTML test report is uploaded as a build artifact.
+
+---
+
 ## ✅ Future Improvements
 
 * Add API Gateway

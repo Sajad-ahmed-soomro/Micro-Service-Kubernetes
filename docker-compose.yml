@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/auth
+      - JWT_SECRET=your_jwt_secret
+      - PORT=3001
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  blog-service:
+    build: ./blog-service
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/blog
+      - JWT_SECRET=your_jwt_secret
+      - PORT=3000
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./analytics-service
+    ports:
+      - "3002:3002"
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/analytics
+      - PORT=3002
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+
